@@ -20,8 +20,6 @@ public class VentaRequest {
     private String clienteDoc;
     private String clienteTelefono;
 
-    @NotBlank @Size(max = 40)
-    private String codigoVenta;
 
     private LocalDate fechaVenta;
 

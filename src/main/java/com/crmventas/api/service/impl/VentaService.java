@@ -8,6 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.crmventas.api.dto.request.CambioEstadoRequest;
 import com.crmventas.api.dto.request.VentaRequest;
+import com.crmventas.api.dto.response.AlertaVentaResponse;
+import com.crmventas.api.dto.response.EstadoConteoResponse;
 import com.crmventas.api.dto.response.PageResponse;
 import com.crmventas.api.dto.response.VentaResponse;
 import com.crmventas.api.entity.Campana;
@@ -23,7 +25,9 @@ import com.crmventas.api.repository.EstadoVentaRepository;
 import com.crmventas.api.repository.UsuarioRepository;
 import com.crmventas.api.repository.VentaRepository;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -58,14 +62,21 @@ public class VentaService {
             ventaRepository.findByClienteId(clienteId, pageable).map(this::toResponse)
         );
     }
-
+    private LocalDate resolverFechaInicio(String periodo) {
+        LocalDate hoy = LocalDate.now();
+        return switch (periodo) {
+            case "7d"  -> hoy.minusDays(7);
+            case "mes" -> hoy.withDayOfMonth(1);
+            default    -> hoy.minusDays(15);   // "15d" y cualquier otro
+        };
+    }
     @Transactional
     public VentaResponse crear(VentaRequest req) {
         Usuario agente = getUsuarioAutenticado();
 
-        if (ventaRepository.existsByCodigoVenta(req.getCodigoVenta())) {
+        /*if (ventaRepository.existsByCodigoVenta(req.getCodigoVenta())) {
             throw new BusinessException("El código de venta ya existe: " + req.getCodigoVenta());
-        }
+        }*/
 
         Campana campana = campanaRepository.findById(req.getCampanaId())
             .orElseThrow(() -> new NotFoundException("Campaña no encontrada"));
@@ -94,7 +105,8 @@ public class VentaService {
             .agente(agente)
             .cliente(cliente)
             .estado(estadoInicial)
-            .codigoVenta(req.getCodigoVenta())
+            // 2. ELIMINAR esta línea:
+            // .codigoVenta(req.getCodigoVenta()) 
             .clienteNombre(clienteNombre)
             .clienteDoc(clienteDoc)
             .clienteTelefono(clienteTel)
@@ -106,7 +118,9 @@ public class VentaService {
             .creadoPor(agente)
             .build();
 
-        return toResponse(ventaRepository.save(venta));
+        Venta ventaGuardada = ventaRepository.saveAndFlush(venta);
+
+        return toResponse(ventaGuardada);
     }
 
     @Transactional
@@ -185,6 +199,9 @@ public class VentaService {
             // Estado
             .estadoCodigo(v.getEstado().getCodigo())
             .estadoNombre(v.getEstado().getNombre())
+
+            .comisionGenerada(v.getComisionGenerada())   // Valor calculado en dinero
+            .comisionPorcentaje(v.getComisionPorcentaje())
             // Cliente resuelto (ficha tiene prioridad sobre campos sueltos)
             .clienteId(c != null ? c.getId() : null)
             .clienteNombre(c != null ? c.getNombre() + " " + c.getApellidos() : v.getClienteNombre())
@@ -193,5 +210,40 @@ public class VentaService {
             .clienteEmail(c != null ? c.getEmail() : null)
             .clienteDistrito(c != null ? c.getDistrito() : null)
             .build();
+    }
+
+    public List<EstadoConteoResponse> getPorEstado(String periodo) {
+        UUID agenteId   = getUsuarioAutenticado().getId();
+        LocalDate desde = resolverFechaInicio(periodo);
+ 
+        return ventaRepository.ventasPorEstado(agenteId, desde)
+                .stream()
+                .map(row -> EstadoConteoResponse.builder()
+                        .estado(row.getEstado())
+                        .codigo(row.getCodigo())
+                        .total(row.getTotal())
+                        .build())
+                .toList();
+    }
+ 
+    /**
+     * GET /api/ventas/alertas
+     * Devuelve las ventas observadas del asesor autenticado.
+     * Sin filtro de período: siempre muestra todas las alertas activas.
+     */
+    public List<AlertaVentaResponse> getAlertas() {
+        UUID agenteId = getUsuarioAutenticado().getId();
+ 
+        return ventaRepository.alertasActivas(agenteId)
+                .stream()
+                .map(v -> AlertaVentaResponse.builder()
+                        .id(v.getId())
+                        .codigoVenta(v.getCodigoVenta())
+                        .clienteNombre(v.getClienteNombre())
+                        .alertaDetalle(v.getAlertaDetalle())
+                        .estado(v.getEstado().getNombre())
+                        .actualizadoEn(v.getActualizadoEn())
+                        .build())
+                .toList();
     }
 }

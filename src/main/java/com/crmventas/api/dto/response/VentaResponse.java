@@ -13,13 +13,19 @@ public class VentaResponse {
     private String codigoVenta;
     private LocalDate fechaVenta;
     private BigDecimal monto;
+    
+    // --- Campos de Comisión Añadidos ---
+    private BigDecimal comisionGenerada;  
+    private BigDecimal comisionPorcentaje; 
+    // -----------------------------------
+
     private String observaciones;
     private Boolean tieneAlerta;
     private String alertaDetalle;
     private OffsetDateTime creadoEn;
     private OffsetDateTime actualizadoEn;
 
-    // Campana
+    // Campaña y Línea
     private UUID campanaId;
     private String campanaNombre;
     private String lineaNombre;
@@ -32,7 +38,7 @@ public class VentaResponse {
     private String estadoCodigo;
     private String estadoNombre;
 
-    // Cliente resuelto (ficha o campos sueltos)
+    // Cliente resuelto
     private UUID clienteId;
     private String clienteNombre;
     private String clienteDoc;

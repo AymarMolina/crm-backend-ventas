@@ -10,10 +10,18 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.crmventas.api.dto.request.CambioEstadoRequest;
 import com.crmventas.api.dto.request.VentaRequest;
+import com.crmventas.api.dto.response.AlertaVentaResponse;
+import com.crmventas.api.dto.response.EstadoConteoResponse;
 import com.crmventas.api.dto.response.PageResponse;
+import com.crmventas.api.dto.response.ResumenAsesorResponse;
+import com.crmventas.api.dto.response.TendenciaDiaResponse;
 import com.crmventas.api.dto.response.VentaResponse;
+import com.crmventas.api.dto.response.VentasPorCampanaResponse;
 import com.crmventas.api.service.impl.VentaService;
 
+import com.crmventas.api.service.impl.DashboardService;
+
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,6 +30,7 @@ import java.util.UUID;
 public class VentaController {
 
     private final VentaService ventaService;
+    private final DashboardService  dashboardService;
 
     @GetMapping
     public ResponseEntity<PageResponse<VentaResponse>> listar(
@@ -96,5 +105,60 @@ public class VentaController {
     ) {
         ventaService.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+        /**
+     * GET /api/ventas/resumen?periodo=15d
+     * KPIs del asesor autenticado: ventas activas, objetivo, monto, comisión, alertas.
+     * El agenteId se extrae del JWT — el asesor solo ve sus propios datos.
+     */
+    @GetMapping("/resumen")
+    public ResponseEntity<ResumenAsesorResponse> resumen(
+        @RequestParam(name = "periodo", defaultValue = "15d") String periodo
+    ) {
+        return ResponseEntity.ok(dashboardService.getResumen(periodo));
+    }
+ 
+    /**
+     * GET /api/ventas/tendencia?periodo=15d
+     * Monto total por día del asesor autenticado.
+     */
+    @GetMapping("/tendencia")
+    public ResponseEntity<List<TendenciaDiaResponse>> tendencia(
+        @RequestParam(name = "periodo", defaultValue = "15d") String periodo
+    ) {
+        return ResponseEntity.ok(dashboardService.getTendencia(periodo));
+    }
+ 
+    /**
+     * GET /api/ventas/por-campana?periodo=15d
+     * Conteo de ventas agrupado por campaña/línea del asesor autenticado.
+     */
+    @GetMapping("/por-campana")
+    public ResponseEntity<List<VentasPorCampanaResponse>> porCampana(
+        @RequestParam(name = "periodo", defaultValue = "15d") String periodo
+    ) {
+        return ResponseEntity.ok(dashboardService.getPorCampana(periodo));
+    }
+ 
+    /**
+     * GET /api/ventas/por-estado?periodo=15d
+     * Conteo de ventas agrupado por estado del asesor autenticado.
+     */
+    @GetMapping("/por-estado")
+    public ResponseEntity<List<EstadoConteoResponse>> porEstado(
+        @RequestParam(name = "periodo", defaultValue = "15d") String periodo
+    ) {
+        return ResponseEntity.ok(dashboardService.getPorEstado(periodo));
+    }
+ 
+    /**
+     * GET /api/ventas/alertas
+     * Ventas observadas (tieneAlerta=true) del asesor autenticado.
+     * Sin filtro de período: muestra TODAS las alertas pendientes.
+     */
+    @GetMapping("/alertas")
+    public ResponseEntity<List<AlertaVentaResponse>> alertas() {
+        return ResponseEntity.ok(dashboardService.getAlertas());
     }
 }

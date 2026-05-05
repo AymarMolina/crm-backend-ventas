@@ -7,6 +7,9 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
+
 @Entity
 @Table(name = "ventas", schema = "crm")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -32,7 +35,9 @@ public class Venta {
     @JoinColumn(name = "estado_id", nullable = false)
     private EstadoVenta estado;
 
-    @Column(name = "codigo_venta", nullable = false, unique = true, length = 40)
+    // En Venta.java
+    @Column(name = "codigo_venta", unique = true, length = 40, insertable = false, updatable = false)
+    @Generated(event = EventType.INSERT)
     private String codigoVenta;
 
     // Campos legacy (fallback cuando no hay ficha de cliente)
@@ -59,6 +64,14 @@ public class Venta {
     @Column(name = "alerta_detalle")
     private String alertaDetalle;
 
+    @Column(name = "comision_generada", precision = 10, scale = 2, insertable = false, updatable = false)
+    @Generated(event = {EventType.INSERT, EventType.UPDATE})
+    private BigDecimal comisionGenerada;
+
+    @Column(name = "comision_porcentaje", precision = 5, scale = 4, insertable = false, updatable = false)
+    @Generated(event = {EventType.INSERT, EventType.UPDATE})
+    private BigDecimal comisionPorcentaje;
+    
     @Column(nullable = false)
     private Boolean eliminado = false;
 

@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 
 import com.crmventas.api.entity.Venta;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -43,4 +45,140 @@ public interface VentaRepository extends JpaRepository<Venta, UUID> {
         ORDER BY v.fechaVenta DESC
         """)
     Page<Venta> findByClienteId(@Param("clienteId") UUID clienteId, Pageable pageable);
+
+    // ── Nuevas para el dashboard ───────────────────────────────────────────────
+ 
+    /**
+     * Cuenta ventas no finales del agente desde una fecha dada.
+     */
+    @Query("""
+        SELECT COUNT(v) FROM Venta v
+        WHERE v.agente.id = :agenteId
+          AND v.eliminado = false
+          AND v.estado.esFinal = false
+          AND v.fechaVenta >= :desde
+        """)
+    int countVentasActivas(
+        @Param("agenteId") UUID agenteId,
+        @Param("desde")    LocalDate desde
+    );
+ 
+    /**
+     * Suma monto total y comisión generada del agente en el período.
+     * Retorna una proyección con getMontoTotal() y getComisionTotal().
+     */
+    @Query("""
+        SELECT SUM(v.monto)            AS montoTotal,
+               SUM(v.comisionGenerada) AS comisionTotal
+        FROM Venta v
+        WHERE v.agente.id = :agenteId
+          AND v.eliminado = false
+          AND v.estado.esFinal = false
+          AND v.fechaVenta >= :desde
+        """)
+    MontoComisionProjection sumMontoYComision(
+        @Param("agenteId") UUID agenteId,
+        @Param("desde")    LocalDate desde
+    );
+ 
+    /**
+     * Cuenta cuántas ventas del agente tienen alerta activa (sin filtro de período).
+     */
+    @Query("""
+        SELECT COUNT(v) FROM Venta v
+        WHERE v.agente.id  = :agenteId
+          AND v.eliminado  = false
+          AND v.tieneAlerta = true
+        """)
+    int countAlertas(@Param("agenteId") UUID agenteId);
+ 
+    /**
+     * Monto total por día en el período dado.
+     */
+    @Query("""
+        SELECT v.fechaVenta AS fecha,
+               SUM(v.monto) AS monto
+        FROM Venta v
+        WHERE v.agente.id = :agenteId
+          AND v.eliminado = false
+          AND v.fechaVenta >= :desde
+        GROUP BY v.fechaVenta
+        ORDER BY v.fechaVenta ASC
+        """)
+    List<TendenciaDiaProjection> tendenciaDiaria(
+        @Param("agenteId") UUID agenteId,
+        @Param("desde")    LocalDate desde
+    );
+ 
+    /**
+     * Conteo de ventas agrupado por nombre de campaña.
+     */
+    @Query("""
+        SELECT v.campana.nombre AS campana,
+               COUNT(v)         AS total
+        FROM Venta v
+        WHERE v.agente.id = :agenteId
+          AND v.eliminado = false
+          AND v.fechaVenta >= :desde
+        GROUP BY v.campana.nombre
+        ORDER BY total DESC
+        """)
+    List<CampanaConteoProjection> ventasPorCampana(
+        @Param("agenteId") UUID agenteId,
+        @Param("desde")    LocalDate desde
+    );
+ 
+    /**
+     * Conteo de ventas agrupado por estado.
+     */
+    @Query("""
+        SELECT v.estado.nombre AS estado,
+               v.estado.codigo AS codigo,
+               COUNT(v)        AS total
+        FROM Venta v
+        WHERE v.agente.id = :agenteId
+          AND v.eliminado = false
+          AND v.fechaVenta >= :desde
+        GROUP BY v.estado.nombre, v.estado.codigo
+        ORDER BY total DESC
+        """)
+    List<EstadoConteoProjection> ventasPorEstado(
+        @Param("agenteId") UUID agenteId,
+        @Param("desde")    LocalDate desde
+    );
+ 
+    /**
+     * Ventas observadas (con alerta activa) del agente.
+     */
+    @Query("""
+        SELECT v FROM Venta v
+        WHERE v.agente.id  = :agenteId
+          AND v.eliminado  = false
+          AND v.tieneAlerta = true
+        ORDER BY v.actualizadoEn DESC
+        """)
+    List<Venta> alertasActivas(@Param("agenteId") UUID agenteId);
+ 
+    // ── Proyecciones ──────────────────────────────────────────────────────────
+ 
+    interface MontoComisionProjection {
+        java.math.BigDecimal getMontoTotal();
+        java.math.BigDecimal getComisionTotal();
+    }
+ 
+    interface TendenciaDiaProjection {
+        java.time.LocalDate  getFecha();
+        java.math.BigDecimal getMonto();
+    }
+ 
+    interface CampanaConteoProjection {
+        String getCampana();
+        long   getTotal();
+    }
+ 
+    interface EstadoConteoProjection {
+        String getEstado();
+        String getCodigo();
+        long   getTotal();
+    }
 }
