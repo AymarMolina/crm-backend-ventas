@@ -17,7 +17,10 @@ public class ClienteRequest {
     private String nombre;
 
     @NotBlank @Size(max = 100)
-    private String apellidos;
+    private String apellidoP;
+
+    @NotBlank @Size(max = 100)
+    private String apellidoM;
 
     @Size(max = 20)
     private String telefono;

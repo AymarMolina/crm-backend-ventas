@@ -15,6 +15,7 @@ import com.crmventas.api.dto.response.VentaResponse;
 import com.crmventas.api.entity.Campana;
 import com.crmventas.api.entity.Cliente;
 import com.crmventas.api.entity.EstadoVenta;
+import com.crmventas.api.entity.Producto;
 import com.crmventas.api.entity.Usuario;
 import com.crmventas.api.entity.Venta;
 import com.crmventas.api.exception.BusinessException;
@@ -22,6 +23,7 @@ import com.crmventas.api.exception.NotFoundException;
 import com.crmventas.api.repository.CampanaRepository;
 import com.crmventas.api.repository.ClienteRepository;
 import com.crmventas.api.repository.EstadoVentaRepository;
+import com.crmventas.api.repository.ProductoRepository;
 import com.crmventas.api.repository.UsuarioRepository;
 import com.crmventas.api.repository.VentaRepository;
 
@@ -40,6 +42,7 @@ public class VentaService {
     private final CampanaRepository campanaRepository;
     private final EstadoVentaRepository estadoVentaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ProductoRepository productoRepository;
 
     public PageResponse<VentaResponse> listar(UUID campanaId, UUID agenteId,
                                                String estadoCodigo, Boolean tieneAlerta,
@@ -73,6 +76,7 @@ public class VentaService {
     @Transactional
     public VentaResponse crear(VentaRequest req) {
         Usuario agente = getUsuarioAutenticado();
+        
 
         /*if (ventaRepository.existsByCodigoVenta(req.getCodigoVenta())) {
             throw new BusinessException("El código de venta ya existe: " + req.getCodigoVenta());
@@ -93,11 +97,21 @@ public class VentaService {
         if (req.getClienteId() != null) {
             cliente = clienteRepository.findById(req.getClienteId())
                 .orElseThrow(() -> new NotFoundException("Cliente no encontrado: " + req.getClienteId()));
-            clienteNombre = cliente.getNombre() + " " + cliente.getApellidos();
+            clienteNombre = cliente.getNombre() + " " + cliente.getApellidoP()+ " " + cliente.getApellidoM();
             clienteDoc    = cliente.getNroDoc();
             clienteTel    = cliente.getTelefono();
         } else if (clienteNombre == null || clienteNombre.isBlank()) {
             throw new BusinessException("Se requiere clienteId o clienteNombre");
+        }
+        Producto producto = null;
+        if (req.getProductoId() != null) {
+            producto = productoRepository.findById(req.getProductoId())
+                    .orElseThrow(() -> new NotFoundException("Producto no encontrado: " + req.getProductoId()));
+
+            // Autocompletar monto si no lo mandaron
+            if (req.getMonto() == null) {
+                req.setMonto(producto.getPrecio());
+            }
         }
 
         Venta venta = Venta.builder()
@@ -107,6 +121,7 @@ public class VentaService {
             .estado(estadoInicial)
             // 2. ELIMINAR esta línea:
             // .codigoVenta(req.getCodigoVenta()) 
+            .producto(producto)  
             .clienteNombre(clienteNombre)
             .clienteDoc(clienteDoc)
             .clienteTelefono(clienteTel)
@@ -204,11 +219,15 @@ public class VentaService {
             .comisionPorcentaje(v.getComisionPorcentaje())
             // Cliente resuelto (ficha tiene prioridad sobre campos sueltos)
             .clienteId(c != null ? c.getId() : null)
-            .clienteNombre(c != null ? c.getNombre() + " " + c.getApellidos() : v.getClienteNombre())
+            .clienteNombre(c != null ? c.getNombre() + " " + c.getApellidoP()+ " " + c.getApellidoM() : v.getClienteNombre())
             .clienteDoc(c != null ? c.getNroDoc() : v.getClienteDoc())
             .clienteTelefono(c != null ? c.getTelefono() : v.getClienteTelefono())
             .clienteEmail(c != null ? c.getEmail() : null)
             .clienteDistrito(c != null ? c.getDistrito() : null)
+
+            .productoId(v.getProducto() != null ? v.getProducto().getId() : null)
+            .productoNombre(v.getProducto() != null ? v.getProducto().getNombre() : null)
+            .productoPrecio(v.getProducto() != null ? v.getProducto().getPrecio() : null)
             .build();
     }
 

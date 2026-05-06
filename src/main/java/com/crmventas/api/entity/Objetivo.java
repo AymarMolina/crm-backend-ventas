@@ -5,7 +5,6 @@ import lombok.*;
  
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.UUID;
  
 @Entity
 @Table(name = "objetivos", schema = "crm",

@@ -13,18 +13,14 @@ import java.util.UUID;
 public interface ObjetivoRepository extends JpaRepository<Objetivo, Integer> {
 
     @Query("""
-        SELECT o.objetivoVentas FROM Objetivo o
-        WHERE o.usuario.id    = :agenteId
-          AND o.campana.mes   = :mes
-          AND o.campana.anio  = :anio
-          AND o.campana.activo = true
-        ORDER BY o.creadoEn DESC
-        LIMIT 1
-        """)
+    SELECT o.objetivoVentas FROM Objetivo o
+    WHERE o.usuario.id     = :agenteId
+      AND o.campana.activo = true
+    ORDER BY o.creadoEn DESC
+    LIMIT 1
+    """)
     Optional<Integer> findObjetivoActualPorAgente(
-        @Param("agenteId") UUID agenteId,
-        @Param("mes")      int mes,
-        @Param("anio")     int anio
+        @Param("agenteId") UUID agenteId
     );
 }
  

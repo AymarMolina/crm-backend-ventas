@@ -21,10 +21,11 @@ public interface ClienteRepository extends JpaRepository<Cliente, UUID> {
     @Query("""
         SELECT c FROM Cliente c
         WHERE c.activo = true
-        AND (:q IS NULL OR
-            LOWER(c.nombre)    LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR
-            LOWER(c.apellidos) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR
-            c.nroDoc   LIKE CONCAT('%', CAST(:q AS string), '%') OR
+        AND (:q IS NULL OR 
+            LOWER(c.nombre) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR
+            LOWER(c.apellidoP) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR
+            LOWER(c.apellidoM) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR
+            c.nroDoc LIKE CONCAT('%', CAST(:q AS string), '%') OR
             c.telefono LIKE CONCAT('%', CAST(:q AS string), '%'))
         """)
     Page<Cliente> buscar(@Param("q") String q, Pageable pageable);

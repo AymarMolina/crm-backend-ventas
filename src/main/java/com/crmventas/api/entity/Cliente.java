@@ -23,8 +23,11 @@ public class Cliente {
     @Column(nullable = false, length = 100)
     private String nombre;
 
-    @Column(nullable = false, length = 100)
-    private String apellidos;
+    @Column(name = "apellido_paterno", length = 100)
+    private String apellidoP;
+
+    @Column(name = "apellido_materno", length = 100)
+    private String apellidoM;
 
     @Column(length = 20)
     private String telefono;

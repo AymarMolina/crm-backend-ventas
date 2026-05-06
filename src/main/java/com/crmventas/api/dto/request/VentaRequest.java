@@ -19,9 +19,11 @@ public class VentaRequest {
     private String clienteNombre;
     private String clienteDoc;
     private String clienteTelefono;
-
+        
 
     private LocalDate fechaVenta;
+
+    private UUID productoId; 
 
     @DecimalMin("0.00")
     private BigDecimal monto;

@@ -1,11 +1,16 @@
 package com.crmventas.api.service.impl;
 
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.crmventas.api.dto.request.AsignarSupervisorRequest;
 import com.crmventas.api.dto.request.UsuarioRequest;
+import com.crmventas.api.dto.response.UsuarioResponse;
 import com.crmventas.api.entity.Rol;
 import com.crmventas.api.entity.Usuario;
 import com.crmventas.api.exception.ConflictException;
@@ -53,5 +58,42 @@ public class UsuarioService {
             "nombres", saved.getNombres(),
             "rol",     rol.getCodigo()
         );
+    }
+
+    public void designarSupervisor(AsignarSupervisorRequest dto) {
+        int filasAfectadas = usuarioRepository.actualizarSupervisor(
+            dto.agenteId(), 
+            dto.supervisorId()
+        );
+
+        if (filasAfectadas == 0) {
+            // Esto ocurre si el agente no es ROL 'AGENTE' o el supervisor no es ROL 'SUPERVISOR'
+            throw new RuntimeException("No se pudo realizar la asignación. Verifique que los usuarios existan y tengan los roles correctos.");
+        }
+    }
+
+    public List<UsuarioResponse> listarAsesores() {
+        return usuarioRepository.findAllAgentes().stream()
+            .map(u -> new UsuarioResponse(
+                u.getId(),
+                u.getNombres(),
+                u.getApellidos(),
+                u.getEmail(),
+                // Evitamos NullPointerException si no tiene supervisor
+                u.getSupervisor() != null ? u.getSupervisor().getNombres() : "Sin asignar"
+            ))
+            .collect(Collectors.toList());
+    }
+
+    public List<UsuarioResponse> listarMiEquipo(UUID supervisorId) {
+        return usuarioRepository.findAgentesBySupervisor(supervisorId).stream()
+            .map(u -> new UsuarioResponse(
+                u.getId(),
+                u.getNombres(),
+                u.getApellidos(),
+                u.getEmail(),
+                u.getSupervisor() != null ? u.getSupervisor().getNombres() : "Sin asignar"
+            ))
+            .collect(Collectors.toList());
     }
 }

@@ -1,5 +1,6 @@
 package com.crmventas.api.service.impl;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -19,6 +20,7 @@ import com.crmventas.api.entity.Usuario;
 import com.crmventas.api.repository.ObjetivoRepository;
 import com.crmventas.api.repository.VentaRepository;
 
+import java.math.BigDecimal;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -58,25 +60,30 @@ public class DashboardService {
     public ResumenAsesorResponse getResumen(String periodo) {
         UUID agenteId   = getUsuarioAutenticado().getId();
         LocalDate desde = resolverFechaInicio(periodo);
- 
-        int    ventasActivas    = ventaRepository.countVentasActivas(agenteId, desde);
-        var    montos           = ventaRepository.sumMontoYComision(agenteId, desde);
-        int    alertas          = ventaRepository.countAlertas(agenteId);
- 
-        // Objetivo del mes actual (campaña activa asignada al agente)
+
+        int ventasActivas = ventaRepository.countVentasActivas(agenteId, desde);
+        int alertas       = ventaRepository.countAlertas(agenteId);
+
+        // IMPORTANTE: si no hay ventas, sumMontoYComision retorna null
+        // no un objeto con ceros — hay que protegerlo
+        var montos = ventaRepository.sumMontoYComision(agenteId, desde);
+        BigDecimal montoTotal    = montos != null && montos.getMontoTotal()    != null
+                                ? montos.getMontoTotal()    : BigDecimal.ZERO;
+        BigDecimal comisionTotal = montos != null && montos.getComisionTotal() != null
+                                ? montos.getComisionTotal() : BigDecimal.ZERO;
+
         int objetivo = objetivoRepository
-                .findObjetivoActualPorAgente(agenteId, LocalDate.now().getMonthValue(),
-                                             LocalDate.now().getYear())
+                .findObjetivoActualPorAgente(agenteId)
                 .orElse(0);
- 
+
         return ResumenAsesorResponse.builder()
                 .ventasActivas(ventasActivas)
                 .objetivo(objetivo)
-                .montoTotal(montos.getMontoTotal())
-                .comisionEstimada(montos.getComisionTotal())
+                .montoTotal(montoTotal)
+                .comisionEstimada(comisionTotal)
                 .alertas(alertas)
                 .build();
-    }
+        }
  
     /**
      * GET /api/ventas/tendencia?periodo=15d

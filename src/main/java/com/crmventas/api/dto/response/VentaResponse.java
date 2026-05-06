@@ -45,4 +45,9 @@ public class VentaResponse {
     private String clienteTelefono;
     private String clienteEmail;
     private String clienteDistrito;
+
+    //Producto
+    private UUID productoId;
+    private String productoNombre;
+    private BigDecimal productoPrecio;
 }

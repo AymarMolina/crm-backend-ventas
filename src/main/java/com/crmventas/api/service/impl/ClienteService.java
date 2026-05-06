@@ -46,7 +46,8 @@ public class ClienteService {
             .tipoDoc(req.getTipoDoc())
             .nroDoc(req.getNroDoc())
             .nombre(req.getNombre())
-            .apellidos(req.getApellidos())
+            .apellidoP(req.getApellidoP())
+            .apellidoM(req.getApellidoM())
             .telefono(req.getTelefono())
             .telefonoAlt(req.getTelefonoAlt())
             .email(req.getEmail())
@@ -69,7 +70,8 @@ public class ClienteService {
         c.setTipoDoc(req.getTipoDoc());
         c.setNroDoc(req.getNroDoc());
         c.setNombre(req.getNombre());
-        c.setApellidos(req.getApellidos());
+        c.setApellidoP(req.getApellidoP());
+        c.setApellidoM(req.getApellidoM());
         c.setTelefono(req.getTelefono());
         c.setTelefonoAlt(req.getTelefonoAlt());
         c.setEmail(req.getEmail());
@@ -96,8 +98,9 @@ public class ClienteService {
             .tipoDoc(c.getTipoDoc())
             .nroDoc(c.getNroDoc())
             .nombre(c.getNombre())
-            .apellidos(c.getApellidos())
-            .nombreCompleto(c.getNombre() + " " + c.getApellidos())
+            .apellidoP(c.getApellidoP())
+            .apellidoM(c.getApellidoM())
+            .nombreCompleto(c.getNombre() + " " + c.getApellidoP()+ " " + c.getApellidoM())
             .telefono(c.getTelefono())
             .telefonoAlt(c.getTelefonoAlt())
             .email(c.getEmail())

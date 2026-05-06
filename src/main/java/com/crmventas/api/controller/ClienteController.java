@@ -26,7 +26,7 @@ public class ClienteController {
         @RequestParam(value = "q", required = false) String q,
         @RequestParam(value = "page", defaultValue = "0") int page,
         @RequestParam(value = "size", defaultValue = "20") int size,
-        @RequestParam(value = "sort", defaultValue = "apellidos") String sort
+        @RequestParam(value = "sort", defaultValue = "apellidoP") String sort
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
         return ResponseEntity.ok(clienteService.listar(q, pageable));

@@ -107,4 +107,7 @@ public class Venta {
     protected void onUpdate() {
         actualizadoEn = OffsetDateTime.now();
     }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "producto_id")
+    private Producto producto;
 }

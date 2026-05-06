@@ -11,7 +11,8 @@ public class ClienteResponse {
     private String tipoDoc;
     private String nroDoc;
     private String nombre;
-    private String apellidos;
+    private String apellidoP;
+    private String apellidoM;
     private String nombreCompleto;
     private String telefono;
     private String telefonoAlt;
