@@ -5,6 +5,8 @@
   frontend-url: http://localhost:4200
 
 spring:
+  profiles:
+    active: local
   application:
     name: crm-backend
   datasource:

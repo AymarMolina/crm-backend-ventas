@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.crmventas.api.entity.Objetivo;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
  
@@ -24,5 +25,9 @@ public interface ObjetivoRepository extends JpaRepository<Objetivo, Integer> {
     );
 
     boolean existsByCampanaIdAndUsuarioId(UUID campanaId, UUID usuarioId);
+
+    Optional<Objetivo> findByCampanaIdAndUsuarioId(UUID campanaId, UUID usuarioId);
+
+    List<Objetivo> findByUsuarioId(UUID usuarioId);
 }
  
