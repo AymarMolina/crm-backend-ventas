@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.crmventas.api.entity.Usuario;
 import com.crmventas.api.entity.Venta;
 
 import java.time.LocalDate;
@@ -158,7 +159,116 @@ public interface VentaRepository extends JpaRepository<Venta, UUID> {
         ORDER BY v.actualizadoEn DESC
         """)
     List<Venta> alertasActivas(@Param("agenteId") UUID agenteId);
+    
+
+    @Query("""
+        SELECT COUNT(v) FROM Venta v
+        WHERE v.agente.id  = :agenteId
+          AND v.eliminado  = false
+          AND v.estado.esFinal = false
+          AND v.fechaVenta >= :desde
+        """)
+    int countVentasActivasPorAgente(
+        @Param("agenteId") UUID agenteId,
+        @Param("desde")    LocalDate desde
+    );
  
+    /**
+     * Suma monto y comisión de UN agente en el período.
+     */
+    @Query("""
+        SELECT SUM(v.monto)            AS montoTotal,
+               SUM(v.comisionGenerada) AS comisionTotal
+        FROM Venta v
+        WHERE v.agente.id  = :agenteId
+          AND v.eliminado  = false
+          AND v.estado.esFinal = false
+          AND v.fechaVenta >= :desde
+        """)
+    MontoComisionProjection sumMontoYComisionPorAgente(
+        @Param("agenteId") UUID agenteId,
+        @Param("desde")    LocalDate desde
+    );
+ 
+    /**
+     * Alertas activas de UN agente.
+     */
+    @Query("""
+        SELECT COUNT(v) FROM Venta v
+        WHERE v.agente.id   = :agenteId
+          AND v.eliminado   = false
+          AND v.tieneAlerta = true
+        """)
+    int countAlertasPorAgente(@Param("agenteId") UUID agenteId);
+ 
+    /**
+     * Todas las alertas activas de una lista de agentes (equipo del supervisor).
+     */
+    @Query("""
+        SELECT v FROM Venta v
+        WHERE v.agente.id IN :agentesIds
+          AND v.eliminado   = false
+          AND v.tieneAlerta = true
+        ORDER BY v.actualizadoEn DESC
+        """)
+    List<Venta> alertasActivasEquipo(@Param("agentesIds") List<UUID> agentesIds);
+ 
+    /**
+     * Tendencia diaria de todo el equipo del supervisor.
+     */
+    @Query("""
+        SELECT v.fechaVenta AS fecha,
+               SUM(v.monto) AS monto
+        FROM Venta v
+        WHERE v.agente.id IN :agentesIds
+          AND v.eliminado  = false
+          AND v.fechaVenta >= :desde
+        GROUP BY v.fechaVenta
+        ORDER BY v.fechaVenta ASC
+        """)
+    List<TendenciaDiaProjection> tendenciaDiariaEquipo(
+        @Param("agentesIds") List<UUID> agentesIds,
+        @Param("desde")      LocalDate desde
+    );
+ 
+    /**
+     * Ventas por estado de todo el equipo.
+     */
+    @Query("""
+        SELECT v.estado.nombre AS estado,
+               v.estado.codigo AS codigo,
+               COUNT(v)        AS total
+        FROM Venta v
+        WHERE v.agente.id IN :agentesIds
+          AND v.eliminado  = false
+          AND v.fechaVenta >= :desde
+        GROUP BY v.estado.nombre, v.estado.codigo
+        ORDER BY total DESC
+        """)
+    List<EstadoConteoProjection> ventasPorEstadoEquipo(
+        @Param("agentesIds") List<UUID> agentesIds,
+        @Param("desde")      LocalDate desde
+    );
+ 
+ 
+// ═══════════════════════════════════════════════════════════════════════════
+// AGREGA estas queries a tu UsuarioRepository.java existente
+// ═══════════════════════════════════════════════════════════════════════════
+ 
+    /**
+     * Devuelve todos los agentes que tienen asignado este supervisor.
+     */
+    @Query("""
+        SELECT u FROM Usuario u
+        WHERE u.supervisor.id = :supervisorId
+          AND u.activo = true
+          AND u.rol.codigo = 'AGENTE'
+        ORDER BY u.apellidos ASC
+        """)
+    List<Usuario> findAgentesBySupervisor(@Param("supervisorId") UUID supervisorId);   
+
+
+
     // ── Proyecciones ──────────────────────────────────────────────────────────
  
     interface MontoComisionProjection {

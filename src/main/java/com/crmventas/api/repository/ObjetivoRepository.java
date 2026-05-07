@@ -22,5 +22,7 @@ public interface ObjetivoRepository extends JpaRepository<Objetivo, Integer> {
     Optional<Integer> findObjetivoActualPorAgente(
         @Param("agenteId") UUID agenteId
     );
+
+    boolean existsByCampanaIdAndUsuarioId(UUID campanaId, UUID usuarioId);
 }
  
