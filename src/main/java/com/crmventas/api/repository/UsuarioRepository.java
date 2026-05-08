@@ -7,8 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.crmventas.api.entity.Usuario;
 
-import jakarta.transaction.Transactional;
-
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,6 +47,22 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
         """, nativeQuery = true)
     List<Usuario> findAllAgentes();
 
+     // Listar todos los agentes (útil para el Gerente)
+    @Query(value = """
+        SELECT u.* FROM crm.usuarios u
+        JOIN crm.roles r ON u.rol_id = r.id
+        WHERE r.codigo = 'SUPERVISOR'
+        """, nativeQuery = true)
+    List<Usuario> findAllSupervisores();
+
+     // Listar todos los agentes (útil para el Gerente)
+    @Query(value = """
+        SELECT u.* FROM crm.usuarios u
+        JOIN crm.roles r ON u.rol_id = r.id
+        WHERE r.codigo = 'SUPERVISOR'
+        """, nativeQuery = true)
+    List<Usuario> findAllBackOffice();
+
     // Listar agentes de un supervisor específico
     List<Usuario> findBySupervisorId(UUID supervisorId);
 
@@ -58,4 +73,48 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
         WHERE r.codigo = 'AGENTE' AND u.supervisor_id = :supervisorId
         """, nativeQuery = true)
     List<Usuario> findAgentesBySupervisor(@Param("supervisorId") UUID supervisorId);
+
+    @Modifying
+    @Query("""
+        UPDATE Usuario u SET
+            u.intentosFallidos = u.intentosFallidos + 1,
+            u.bloqueadoHasta = CASE 
+                WHEN (u.intentosFallidos + 1) >= :maxIntentos 
+                THEN :bloqueadoHasta 
+                ELSE u.bloqueadoHasta 
+            END
+        WHERE u.id = :id
+        """)
+    void incrementarIntentoFallido(
+        @Param("id") UUID id,
+        @Param("maxIntentos") int maxIntentos,
+        @Param("bloqueadoHasta") OffsetDateTime bloqueadoHasta
+    );
+
+    // Soft delete: marcar como inactivo
+    @Modifying
+    @Query("""
+        UPDATE Usuario u SET
+            u.activo = false,
+            u.eliminadoEn = :ahora,
+            u.eliminadoPor = :eliminadoPor
+        WHERE u.id = :id
+        """)
+    void softDelete(
+        @Param("id") UUID id,
+        @Param("ahora") OffsetDateTime ahora,
+        @Param("eliminadoPor") UUID eliminadoPor
+    );
+
+    // Hard delete: eliminar los que llevan más de 30 días inactivos
+    @Modifying
+    @Query("""
+        DELETE FROM Usuario u
+        WHERE u.activo = false
+        AND u.eliminadoEn < :limite
+        """)
+    int purgarEliminadosAntiguos(@Param("limite") OffsetDateTime limite);
+
+    @Query("SELECT u FROM Usuario u JOIN FETCH u.rol WHERE u.activo = false ORDER BY u.eliminadoEn DESC")
+    List<Usuario> findAllInactivos();
 }

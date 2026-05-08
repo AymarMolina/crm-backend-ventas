@@ -24,7 +24,6 @@ import com.crmventas.api.repository.CampanaRepository;
 import com.crmventas.api.repository.ClienteRepository;
 import com.crmventas.api.repository.EstadoVentaRepository;
 import com.crmventas.api.repository.ProductoRepository;
-import com.crmventas.api.repository.UsuarioRepository;
 import com.crmventas.api.repository.VentaRepository;
 
 import java.time.LocalDate;
@@ -41,7 +40,6 @@ public class VentaService {
     private final ClienteRepository clienteRepository;
     private final CampanaRepository campanaRepository;
     private final EstadoVentaRepository estadoVentaRepository;
-    private final UsuarioRepository usuarioRepository;
     private final ProductoRepository productoRepository;
 
     public PageResponse<VentaResponse> listar(UUID campanaId, UUID agenteId,

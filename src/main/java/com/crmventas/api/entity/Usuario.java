@@ -58,6 +58,12 @@ public class Usuario {
     @Column(name = "actualizado_en", nullable = false)
     private OffsetDateTime actualizadoEn;
 
+    @Column(name = "eliminado_en")
+    private OffsetDateTime eliminadoEn;
+
+    @Column(name = "eliminado_por")
+    private UUID eliminadoPor;
+    
     @PrePersist
     protected void onCreate() {
         creadoEn = OffsetDateTime.now();

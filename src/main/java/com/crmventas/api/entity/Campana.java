@@ -38,4 +38,16 @@ public class Campana {
 
     @Column(name = "actualizado_en", nullable = false)
     private OffsetDateTime actualizadoEn;
+
+    // ✅ Esto evita el error de campos NOT NULL vacíos
+    @PrePersist
+    void onCreate() {
+        this.creadoEn     = OffsetDateTime.now();
+        this.actualizadoEn = OffsetDateTime.now();
+    }
+
+    @PreUpdate
+    void onUpdate() {
+        this.actualizadoEn = OffsetDateTime.now();
+    }
 }

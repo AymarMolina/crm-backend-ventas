@@ -37,7 +37,8 @@ public class AuthService {
     private final JwtService jwtService;
     private final EmailService emailService;
     private final TokenResetPasswordRepository tokenResetRepo;
-
+    private final LoginAuditService loginAuditService;
+    
     @Value("${app.security.max-intentos-login:5}")
     private int maxIntentos;
 
@@ -68,7 +69,7 @@ public class AuthService {
 
         // Verificar password
         if (!passwordEncoder.matches(req.getPassword(), usuario.getHashPassword())) {
-            registrarIntentoFallido(usuario);
+            loginAuditService.registrarIntentoFallido(usuario, maxIntentos, lockoutMinutos);
             throw new BusinessException("Credenciales inválidas");
         }
 
@@ -95,15 +96,6 @@ public class AuthService {
             .build();
     }
 
-    private void registrarIntentoFallido(Usuario usuario) {
-        short intentos = (short) (usuario.getIntentosFallidos() + 1);
-        usuario.setIntentosFallidos(intentos);
-        if (intentos >= maxIntentos) {
-            usuario.setBloqueadoHasta(OffsetDateTime.now().plusMinutes(lockoutMinutos));
-            log.warn("Cuenta bloqueada: {}", usuario.getEmail());
-        }
-        usuarioRepository.save(usuario);
-    }
     @Transactional
     public void forgotPassword(ForgotPasswordRequest req, HttpServletRequest httpReq) {
         // Siempre responde OK aunque el email no exista (evita user enumeration)

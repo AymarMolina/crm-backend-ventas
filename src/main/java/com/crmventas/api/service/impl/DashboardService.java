@@ -20,7 +20,6 @@ import com.crmventas.api.entity.Usuario;
 import com.crmventas.api.repository.ObjetivoRepository;
 import com.crmventas.api.repository.VentaRepository;
 
-import java.math.BigDecimal;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
