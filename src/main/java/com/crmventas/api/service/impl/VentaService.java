@@ -68,25 +68,19 @@ public class VentaService {
         return switch (periodo) {
             case "7d"  -> hoy.minusDays(7);
             case "mes" -> hoy.withDayOfMonth(1);
-            default    -> hoy.minusDays(15);   // "15d" y cualquier otro
+            default    -> hoy.minusDays(15);  
         };
     }
     @Transactional
     public VentaResponse crear(VentaRequest req) {
         Usuario agente = getUsuarioAutenticado();
         
-
-        /*if (ventaRepository.existsByCodigoVenta(req.getCodigoVenta())) {
-            throw new BusinessException("El código de venta ya existe: " + req.getCodigoVenta());
-        }*/
-
         Campana campana = campanaRepository.findById(req.getCampanaId())
             .orElseThrow(() -> new NotFoundException("Campaña no encontrada"));
 
         EstadoVenta estadoInicial = estadoVentaRepository.findByCodigo("ACTIVO")
             .orElseThrow(() -> new NotFoundException("Estado ACTIVO no encontrado"));
 
-        // Resolver cliente
         Cliente cliente = null;
         String clienteNombre = req.getClienteNombre();
         String clienteDoc    = req.getClienteDoc();
@@ -106,7 +100,6 @@ public class VentaService {
             producto = productoRepository.findById(req.getProductoId())
                     .orElseThrow(() -> new NotFoundException("Producto no encontrado: " + req.getProductoId()));
 
-            // Autocompletar monto si no lo mandaron
             if (req.getMonto() == null) {
                 req.setMonto(producto.getPrecio());
             }
@@ -117,8 +110,6 @@ public class VentaService {
             .agente(agente)
             .cliente(cliente)
             .estado(estadoInicial)
-            // 2. ELIMINAR esta línea:
-            // .codigoVenta(req.getCodigoVenta()) 
             .producto(producto)  
             .clienteNombre(clienteNombre)
             .clienteDoc(clienteDoc)
@@ -142,7 +133,6 @@ public class VentaService {
         EstadoVenta nuevoEstado = estadoVentaRepository.findByCodigo(req.getEstadoCodigo())
             .orElseThrow(() -> new NotFoundException("Estado no encontrado: " + req.getEstadoCodigo()));
 
-        // No se puede cambiar desde un estado final (CAIDA)
         if (venta.getEstado().getEsFinal()) {
             throw new BusinessException("La venta está en estado final y no puede modificarse");
         }
@@ -150,7 +140,6 @@ public class VentaService {
         venta.setEstado(nuevoEstado);
         venta.setActualizadoPor(getUsuarioAutenticado());
 
-        // Si se marca como OBSERVADO, activar alerta
         if ("OBSERVADO".equals(req.getEstadoCodigo())) {
             venta.setTieneAlerta(true);
             venta.setAlertaDetalle(req.getMotivo());
@@ -178,7 +167,6 @@ public class VentaService {
         ventaRepository.save(venta);
     }
 
-    // ── helpers ──────────────────────────────────────────────────────────────
 
     private Venta findOrThrow(UUID id) {
         return ventaRepository.findByIdAndEliminadoFalse(id)
@@ -213,9 +201,8 @@ public class VentaService {
             .estadoCodigo(v.getEstado().getCodigo())
             .estadoNombre(v.getEstado().getNombre())
 
-            .comisionGenerada(v.getComisionGenerada())   // Valor calculado en dinero
+            .comisionGenerada(v.getComisionGenerada())   
             .comisionPorcentaje(v.getComisionPorcentaje())
-            // Cliente resuelto (ficha tiene prioridad sobre campos sueltos)
             .clienteId(c != null ? c.getId() : null)
             .clienteNombre(c != null ? c.getNombre() + " " + c.getApellidoP()+ " " + c.getApellidoM() : v.getClienteNombre())
             .clienteDoc(c != null ? c.getNroDoc() : v.getClienteDoc())
