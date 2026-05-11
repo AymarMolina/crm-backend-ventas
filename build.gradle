@@ -48,6 +48,10 @@ dependencies {
 
     //RESEND
     implementation 'com.resend:resend-java:+'
+
+    // Apache POI – generación de Excel .xlsx
+    implementation 'org.apache.poi:poi:5.3.0'
+    implementation 'org.apache.poi:poi-ooxml:5.3.0'
     
 
 }

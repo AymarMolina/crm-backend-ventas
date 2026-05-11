@@ -10,6 +10,8 @@ import com.crmventas.api.entity.Usuario;
 import com.crmventas.api.entity.Venta;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -153,12 +155,13 @@ public interface VentaRepository extends JpaRepository<Venta, UUID> {
      */
     @Query("""
         SELECT v FROM Venta v
-        WHERE v.agente.id  = :agenteId
-          AND v.eliminado  = false
-          AND v.tieneAlerta = true
+        WHERE v.tieneAlerta = true
+        AND v.agente.id = :agenteId
+        AND v.eliminado = false
+        AND (v.alertaExpiraEn IS NULL OR v.alertaExpiraEn > :ahora)
         ORDER BY v.actualizadoEn DESC
-        """)
-    List<Venta> alertasActivas(@Param("agenteId") UUID agenteId);
+    """)
+    List<Venta> alertasActivas(@Param("agenteId") UUID agenteId, @Param("ahora") OffsetDateTime ahora);
     
 
     @Query("""
@@ -267,7 +270,13 @@ public interface VentaRepository extends JpaRepository<Venta, UUID> {
         """)
     List<Usuario> findAgentesBySupervisor(@Param("supervisorId") UUID supervisorId);   
 
-
+    @Query("""
+        SELECT v FROM Venta v
+        WHERE v.tieneAlerta = true
+        AND (v.alertaExpiraEn IS NULL OR v.alertaExpiraEn > :ahora)
+        ORDER BY v.actualizadoEn DESC
+    """)
+    List<Venta> findAlertasActivas(@Param("ahora") LocalDateTime ahora);    
 
     // ── Proyecciones ──────────────────────────────────────────────────────────
  

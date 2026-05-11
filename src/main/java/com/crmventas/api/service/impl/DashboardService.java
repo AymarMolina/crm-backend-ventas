@@ -2,6 +2,7 @@ package com.crmventas.api.service.impl;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
@@ -144,8 +145,8 @@ public class DashboardService {
      */
     public List<AlertaVentaResponse> getAlertas() {
         UUID agenteId = getUsuarioAutenticado().getId();
- 
-        return ventaRepository.alertasActivas(agenteId)
+
+        return ventaRepository.alertasActivas(agenteId, OffsetDateTime.now()) // ← agrega OffsetDateTime.now()
                 .stream()
                 .map(v -> AlertaVentaResponse.builder()
                         .id(v.getId())
@@ -154,7 +155,9 @@ public class DashboardService {
                         .alertaDetalle(v.getAlertaDetalle())
                         .estado(v.getEstado().getNombre())
                         .actualizadoEn(v.getActualizadoEn())
+                        .alertaExpiraEn(v.getAlertaExpiraEn())
                         .build())
                 .toList();
     }
+    
 }

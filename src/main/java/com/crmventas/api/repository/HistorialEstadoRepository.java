@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.UUID;
 
 public interface HistorialEstadoRepository extends JpaRepository<HistorialEstado, Long> {
+    
+     List<HistorialEstado> findByVentaIdOrderByCambiadoEnDesc(UUID ventaId);
  
     /**
      * Historial de cambios de estado de una venta específica.

@@ -10,6 +10,7 @@ import com.crmventas.api.dto.request.CambioEstadoRequest;
 import com.crmventas.api.dto.request.VentaRequest;
 import com.crmventas.api.dto.response.AlertaVentaResponse;
 import com.crmventas.api.dto.response.EstadoConteoResponse;
+import com.crmventas.api.dto.response.HistorialEstadoResponse;
 import com.crmventas.api.dto.response.PageResponse;
 import com.crmventas.api.dto.response.VentaResponse;
 import com.crmventas.api.entity.Campana;
@@ -23,10 +24,12 @@ import com.crmventas.api.exception.NotFoundException;
 import com.crmventas.api.repository.CampanaRepository;
 import com.crmventas.api.repository.ClienteRepository;
 import com.crmventas.api.repository.EstadoVentaRepository;
+import com.crmventas.api.repository.HistorialEstadoRepository;
 import com.crmventas.api.repository.ProductoRepository;
 import com.crmventas.api.repository.VentaRepository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -41,6 +44,7 @@ public class VentaService {
     private final CampanaRepository campanaRepository;
     private final EstadoVentaRepository estadoVentaRepository;
     private final ProductoRepository productoRepository;
+    private final HistorialEstadoRepository historialEstadoRepository;
 
     public PageResponse<VentaResponse> listar(UUID campanaId, UUID agenteId,
                                                String estadoCodigo, Boolean tieneAlerta,
@@ -78,7 +82,7 @@ public class VentaService {
         Campana campana = campanaRepository.findById(req.getCampanaId())
             .orElseThrow(() -> new NotFoundException("Campaña no encontrada"));
 
-        EstadoVenta estadoInicial = estadoVentaRepository.findByCodigo("ACTIVO")
+        EstadoVenta estadoInicial = estadoVentaRepository.findByCodigo("EN_PROCESO")
             .orElseThrow(() -> new NotFoundException("Estado ACTIVO no encontrado"));
 
         Cliente cliente = null;
@@ -139,15 +143,39 @@ public class VentaService {
 
         venta.setEstado(nuevoEstado);
         venta.setActualizadoPor(getUsuarioAutenticado());
+        venta.setAlertaDetalle(req.getMotivo());
 
-        if ("OBSERVADO".equals(req.getEstadoCodigo())) {
-            venta.setTieneAlerta(true);
-            venta.setAlertaDetalle(req.getMotivo());
+        switch (req.getEstadoCodigo()) {
+            case "ACTIVO" -> {
+                venta.setTieneAlerta(true);
+                venta.setAlertaDetalle(null); // ← limpia observación anterior
+                venta.setAlertaExpiraEn(OffsetDateTime.now().plusMinutes(1));
+            }
+            case "OBSERVADO" -> {
+                venta.setTieneAlerta(true);
+                venta.setAlertaExpiraEn(null); // sin expiración
+            }
+            case "CAIDA" -> {
+                venta.setTieneAlerta(true);
+                venta.setAlertaExpiraEn(null); // sin expiración, se archiva manualmente
+            }
+            case "EN_PROCESO" -> {
+                venta.setTieneAlerta(false);
+                venta.setAlertaExpiraEn(null);
+            }
         }
 
         return toResponse(ventaRepository.save(venta));
     }
-
+    @Transactional
+    public void archivarCaida(UUID id) {
+        Venta venta = findOrThrow(id);
+        if (!"CAIDA".equals(venta.getEstado().getCodigo())) {
+            throw new BusinessException("Solo se pueden archivar ventas en estado CAÍDA");
+        }
+        venta.setTieneAlerta(false);
+        ventaRepository.save(venta);
+    }
     @Transactional
     public VentaResponse actualizarCliente(UUID ventaId, UUID clienteId) {
         Venta venta = findOrThrow(ventaId);
@@ -237,8 +265,8 @@ public class VentaService {
      */
     public List<AlertaVentaResponse> getAlertas() {
         UUID agenteId = getUsuarioAutenticado().getId();
- 
-        return ventaRepository.alertasActivas(agenteId)
+
+        return ventaRepository.alertasActivas(agenteId, OffsetDateTime.now()) // ← agrega OffsetDateTime.now()
                 .stream()
                 .map(v -> AlertaVentaResponse.builder()
                         .id(v.getId())
@@ -247,7 +275,19 @@ public class VentaService {
                         .alertaDetalle(v.getAlertaDetalle())
                         .estado(v.getEstado().getNombre())
                         .actualizadoEn(v.getActualizadoEn())
+                        .alertaExpiraEn(v.getAlertaExpiraEn())
                         .build())
                 .toList();
+    }
+    public List<HistorialEstadoResponse> getHistorial(UUID ventaId) {
+        return historialEstadoRepository.findByVentaIdOrderByCambiadoEnDesc(ventaId)
+            .stream()
+            .map(h -> HistorialEstadoResponse.builder()
+                .estadoAnterior(h.getEstadoAnterior() != null ? h.getEstadoAnterior().getNombre() : "—")
+                .estadoNuevo(h.getEstadoNuevo().getNombre())
+                .motivo(h.getMotivo())
+                .cambiadoEn(h.getCambiadoEn())
+                .build())
+            .toList();
     }
 }

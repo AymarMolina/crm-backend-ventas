@@ -14,5 +14,6 @@ public class AlertaVentaResponse {
     private String        alertaDetalle;
     private String        estado;
     private OffsetDateTime actualizadoEn;
+    private OffsetDateTime alertaExpiraEn;
 }
  
