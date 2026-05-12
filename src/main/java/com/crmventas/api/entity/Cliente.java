@@ -52,6 +52,12 @@ public class Cliente {
     @Column(name = "actualizado_en", nullable = false)
     private OffsetDateTime actualizadoEn;
 
+    @Column(length = 80)
+    private String departamento;
+
+    @Column(length = 80)
+    private String provincia;
+    
     @PrePersist
     protected void onCreate() {
         creadoEn = OffsetDateTime.now();

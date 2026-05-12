@@ -3,19 +3,12 @@ import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.*;
-import org.apache.poi.xssf.usermodel.extensions.XSSFCellBorder;
 import org.springframework.stereotype.Service;
 
 import com.crmventas.api.dto.FiltroReporteDTO;
 import com.crmventas.api.dto.VentaReporteDTO;
 import com.crmventas.api.repository.Ventareporterepository;
 
-import lombok.RequiredArgsConstructor;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.xssf.usermodel.*;
-import org.springframework.stereotype.Service;
- 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;

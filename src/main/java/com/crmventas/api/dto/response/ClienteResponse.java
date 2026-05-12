@@ -16,6 +16,8 @@ public class ClienteResponse {
     private String nombreCompleto;
     private String telefono;
     private String telefonoAlt;
+    private String departamento;
+    private String provincia;
     private String email;
     private String direccion;
     private String distrito;

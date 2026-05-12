@@ -35,4 +35,10 @@ public class ClienteRequest {
 
     @Size(max = 80)
     private String distrito;
+
+    @Size(max = 80)
+    private String departamento;
+
+    @Size(max = 80)
+    private String provincia;
 }

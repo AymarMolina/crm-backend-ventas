@@ -51,6 +51,8 @@ public class ClienteService {
             .telefono(req.getTelefono())
             .telefonoAlt(req.getTelefonoAlt())
             .email(req.getEmail())
+            .departamento(req.getDepartamento())
+            .provincia(req.getProvincia())
             .direccion(req.getDireccion())
             .distrito(req.getDistrito())
             .activo(true)
@@ -75,6 +77,8 @@ public class ClienteService {
         c.setTelefono(req.getTelefono());
         c.setTelefonoAlt(req.getTelefonoAlt());
         c.setEmail(req.getEmail());
+        c.setDepartamento(req.getDepartamento());
+        c.setProvincia(req.getProvincia());
         c.setDireccion(req.getDireccion());
         c.setDistrito(req.getDistrito());
         return toResponse(clienteRepository.save(c));
@@ -104,6 +108,8 @@ public class ClienteService {
             .telefono(c.getTelefono())
             .telefonoAlt(c.getTelefonoAlt())
             .email(c.getEmail())
+            .provincia(c.getProvincia())
+            .departamento(c.getDepartamento())
             .direccion(c.getDireccion())
             .distrito(c.getDistrito())
             .activo(c.getActivo())
