@@ -436,10 +436,6 @@ public class ReporteVentasService {
         c.setCellStyle(style);
     }
  
-    /** Celda numérica (BigDecimal → Double) */
-    private void celdaNum(XSSFRow row, int col, BigDecimal value, XSSFCellStyle style) {
-        celdaNum(row, col, value != null ? value.doubleValue() : null, style);
-    }
  
     /** Celda de metadata (label / valor) */
     private void celdaMeta(XSSFRow row, int col, String value, XSSFCellStyle style) {

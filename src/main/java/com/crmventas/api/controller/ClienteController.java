@@ -32,9 +32,18 @@ public class ClienteController {
         return ResponseEntity.ok(clienteService.listar(q, pageable));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ClienteResponse> obtener(@PathVariable("id") UUID id) {
-        return ResponseEntity.ok(clienteService.obtener(id));
+    @PutMapping("/{id}")
+    public ResponseEntity<ClienteResponse> actualizar(
+        @PathVariable("id") UUID id, // Added ("id")
+        @Valid @RequestBody ClienteRequest req
+    ) {
+        return ResponseEntity.ok(clienteService.actualizar(id, req));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> desactivar(@PathVariable("id") UUID id) { // Added ("id")
+        clienteService.desactivar(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/buscar")
@@ -54,25 +63,5 @@ public class ClienteController {
         var location = ServletUriComponentsBuilder.fromCurrentRequest()
             .path("/{id}").buildAndExpand(created.getId()).toUri();
         return ResponseEntity.created(location).body(created);
-    }
-
-    /**
-     * PUT /api/clientes/{id}
-     */
-    @PutMapping("/{id}")
-    public ResponseEntity<ClienteResponse> actualizar(
-        @PathVariable UUID id,
-        @Valid @RequestBody ClienteRequest req
-    ) {
-        return ResponseEntity.ok(clienteService.actualizar(id, req));
-    }
-
-    /**
-     * DELETE /api/clientes/{id}  →  soft delete (activo = false)
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> desactivar(@PathVariable UUID id) {
-        clienteService.desactivar(id);
-        return ResponseEntity.noContent().build();
     }
 }
