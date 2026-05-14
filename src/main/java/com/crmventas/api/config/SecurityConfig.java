@@ -59,7 +59,7 @@ public class SecurityConfig {
         // 1. Añade aquí tu URL de Vercel (SIN el '/' al final)
         config.setAllowedOrigins(List.of(
             "http://localhost:4200",
-            "crm-frontend-ventas.vercel.app" // <--- REEMPLAZA ESTO
+            "https://crm-frontend-ventas.vercel.app" // <--- REEMPLAZA ESTO
         ));
         
         config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
