@@ -1,23 +1,28 @@
-# Etapa 1: Construcción (Maven)
-FROM maven:3.9.6-eclipse-temurin-17 AS build
+# Etapa 1: Construcción
+FROM eclipse-temurin:17-jdk-jammy AS build
 WORKDIR /app
-# Copiar solo el pom.xml primero para aprovechar la caché de capas de Docker
-COPY pom.xml .
-RUN mvn dependency:go-offline
 
-# Copiar el código fuente y construir el JAR
+# Copiar archivos de configuración de Gradle
+COPY gradlew .
+COPY gradle ./gradle
+COPY build.gradle .
+COPY settings.gradle .
+
+# Dar permisos de ejecución al wrapper y descargar dependencias
+RUN chmod +x gradlew
+RUN ./gradlew dependencies --no-daemon
+
+# Copiar el código fuente y construir el proyecto
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN ./gradlew bootJar --no-daemon
 
 # Etapa 2: Ejecución
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
-# Copiar el JAR generado desde la etapa de construcción
-COPY --from=build /app/target/*.jar app.jar
 
-# Exponer el puerto que Render usa por defecto
+# En Gradle, el archivo generado suele estar en build/libs/
+COPY --from=build /app/build/libs/*.jar app.jar
+
 EXPOSE 10000
 
-# Ejecutar la aplicación
-# Usamos -Dserver.port=10000 para forzar el puerto que Render espera
 ENTRYPOINT ["java", "-Dserver.port=10000", "-jar", "app.jar"]
