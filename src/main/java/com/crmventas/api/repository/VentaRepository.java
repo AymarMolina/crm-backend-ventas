@@ -58,7 +58,7 @@ public interface VentaRepository extends JpaRepository<Venta, UUID> {
         SELECT COUNT(v) FROM Venta v
         WHERE v.agente.id = :agenteId
           AND v.eliminado = false
-          AND v.estado.esFinal = false
+          AND  v.estado.codigo = 'ACTIVO'
           AND v.fechaVenta >= :desde
         """)
     int countVentasActivas(
@@ -76,7 +76,7 @@ public interface VentaRepository extends JpaRepository<Venta, UUID> {
         FROM Venta v
         WHERE v.agente.id = :agenteId
           AND v.eliminado = false
-          AND v.estado.esFinal = false
+          AND  v.estado.codigo = 'ACTIVO'
           AND v.fechaVenta >= :desde
         """)
     MontoComisionProjection sumMontoYComision(
@@ -100,11 +100,12 @@ public interface VentaRepository extends JpaRepository<Venta, UUID> {
      */
     @Query("""
         SELECT v.fechaVenta AS fecha,
-               SUM(v.monto) AS monto
+            SUM(v.monto) AS monto
         FROM Venta v
         WHERE v.agente.id = :agenteId
-          AND v.eliminado = false
-          AND v.fechaVenta >= :desde
+        AND v.eliminado = false
+        AND v.estado.codigo = 'ACTIVO'
+        AND v.fechaVenta >= :desde
         GROUP BY v.fechaVenta
         ORDER BY v.fechaVenta ASC
         """)
@@ -118,11 +119,12 @@ public interface VentaRepository extends JpaRepository<Venta, UUID> {
      */
     @Query("""
         SELECT v.campana.nombre AS campana,
-               COUNT(v)         AS total
+            COUNT(v)         AS total
         FROM Venta v
         WHERE v.agente.id = :agenteId
-          AND v.eliminado = false
-          AND v.fechaVenta >= :desde
+        AND v.eliminado = false
+        AND v.estado.codigo = 'ACTIVO'
+        AND v.fechaVenta >= :desde
         GROUP BY v.campana.nombre
         ORDER BY total DESC
         """)

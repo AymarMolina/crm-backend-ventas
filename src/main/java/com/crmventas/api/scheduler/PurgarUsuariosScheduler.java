@@ -14,10 +14,4 @@ public class PurgarUsuariosScheduler {
 
     private final UsuarioService usuarioService;
 
-    // Todos los días a las 2:00 AM
-    @Scheduled(cron = "0 0 2 * * *")
-    public void purgarUsuariosEliminados() {
-        log.info("Iniciando purga de usuarios inactivos...");
-        usuarioService.purgarEliminados();
-    }
 }

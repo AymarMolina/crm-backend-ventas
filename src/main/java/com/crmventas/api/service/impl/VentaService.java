@@ -289,4 +289,45 @@ public class VentaService {
                 .build())
             .toList();
     }
+
+    @Transactional
+    public VentaResponse actualizar(UUID id, VentaRequest req) {
+        Venta venta = findOrThrow(id);
+
+        if (req.getCampanaId() != null) {
+            Campana campana = campanaRepository.findById(req.getCampanaId())
+                .orElseThrow(() -> new NotFoundException("Campaña no encontrada"));
+            venta.setCampana(campana);
+        }
+
+        if (req.getProductoId() != null) {
+            Producto producto = productoRepository.findById(req.getProductoId())
+                .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
+            venta.setProducto(producto);
+            if (req.getMonto() == null) {
+                venta.setMonto(producto.getPrecio());
+            }
+        }
+
+        if (req.getClienteId() != null) {
+            Cliente cliente = clienteRepository.findById(req.getClienteId())
+                .orElseThrow(() -> new NotFoundException("Cliente no encontrado"));
+            venta.setCliente(cliente);
+            venta.setClienteNombre(cliente.getNombre() + " " + cliente.getApellidoP() + " " + cliente.getApellidoM());
+            venta.setClienteDoc(cliente.getNroDoc());
+            venta.setClienteTelefono(cliente.getTelefono());
+        } else {
+            if (req.getClienteNombre() != null) venta.setClienteNombre(req.getClienteNombre());
+            if (req.getClienteDoc()    != null) venta.setClienteDoc(req.getClienteDoc());
+            if (req.getClienteTelefono() != null) venta.setClienteTelefono(req.getClienteTelefono());
+        }
+
+        if (req.getFechaVenta()    != null) venta.setFechaVenta(req.getFechaVenta());
+        if (req.getMonto()         != null) venta.setMonto(req.getMonto());
+        if (req.getObservaciones() != null) venta.setObservaciones(req.getObservaciones());
+
+        venta.setActualizadoPor(getUsuarioAutenticado());
+
+        return toResponse(ventaRepository.save(venta));
+    }
 }

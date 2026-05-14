@@ -166,12 +166,6 @@ public class UsuarioService {
     usuarioRepository.softDelete(id, OffsetDateTime.now(), eliminadoPorId);
     }
 
-    // Este lo llama el scheduler automáticamente
-    public int purgarEliminados() {
-        OffsetDateTime limite = OffsetDateTime.now().minusDays(30);
-        int eliminados = usuarioRepository.purgarEliminadosAntiguos(limite);
-        return eliminados;
-    }
 
     public List<Map<String, Object>> listarEliminados() {
         return usuarioRepository.findAllInactivos().stream()

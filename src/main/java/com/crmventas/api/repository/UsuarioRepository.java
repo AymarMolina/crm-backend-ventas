@@ -107,13 +107,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
     );
 
     // Hard delete: eliminar los que llevan más de 30 días inactivos
-    @Modifying
-    @Query("""
-        DELETE FROM Usuario u
-        WHERE u.activo = false
-        AND u.eliminadoEn < :limite
-        """)
-    int purgarEliminadosAntiguos(@Param("limite") OffsetDateTime limite);
 
     @Query("SELECT u FROM Usuario u JOIN FETCH u.rol WHERE u.activo = false ORDER BY u.eliminadoEn DESC")
     List<Usuario> findAllInactivos();

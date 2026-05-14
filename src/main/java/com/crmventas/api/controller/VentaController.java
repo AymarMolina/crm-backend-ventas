@@ -71,6 +71,14 @@ import com.crmventas.api.dto.response.PageResponse;
             return ResponseEntity.created(location).body(created);
         }
 
+        @PutMapping("/{id}")
+        public ResponseEntity<VentaResponse> actualizar(
+            @PathVariable("id") UUID id,
+            @Valid @RequestBody VentaRequest req
+        ) {
+            return ResponseEntity.ok(ventaService.actualizar(id, req));
+        }
+
         /**
          * PATCH /api/ventas/{id}/estado
          * Roles: GERENTE, BACK_OFFICE
