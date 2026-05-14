@@ -100,4 +100,11 @@ public class ObjetivoService {
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
+    public List<ObjetivoResponse> listarObjetivosPorUsuario(UUID usuarioId) {
+        return objetivoRepository.findByUsuarioId(usuarioId)
+                .stream()
+                .map(this::toResponse)   
+                .toList();
+    }
+ 
 }

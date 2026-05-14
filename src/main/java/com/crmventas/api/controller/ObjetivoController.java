@@ -63,4 +63,13 @@ public class ObjetivoController {
     public ResponseEntity<List<ObjetivoResponse>> listarMisObjetivos() {
         return ResponseEntity.ok(objetivoService.listarObjetivosParaAsesorLogueado());
     }
+
+    @GetMapping("/por-usuario/{usuarioId}")
+    @PreAuthorize("hasAnyRole('GERENTE', 'SUPERVISOR')")
+    public ResponseEntity<List<ObjetivoResponse>> listarPorUsuario(
+            @PathVariable("usuarioId") UUID usuarioId) {
+    
+        return ResponseEntity.ok(objetivoService.listarObjetivosPorUsuario(usuarioId));
+    }
+    
 }
