@@ -35,40 +35,39 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         @NonNull HttpServletResponse response,
         @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-    
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            response.setStatus(HttpServletResponse.SC_OK);
+
+        // 1. Si es una ruta de autenticación, saltar el filtro de inmediato
+        String path = request.getServletPath();
+        if (path.contains("/auth")) {
+            filterChain.doFilter(request, response);
             return;
         }
 
+        // 2. Obtener el header
         String header = request.getHeader("Authorization");
         if (header == null || !header.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
+        // 3. Validar Token
         String token = header.substring(7);
-        if (!jwtService.isValid(token)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            filterChain.doFilter(request, response);
-            return;
-        }
         try {
-            String userId = jwtService.getSubject(token);
-            String rol    = jwtService.getRol(token);
+            if (jwtService.isValid(token)) {
+                String userId = jwtService.getSubject(token);
+                String rol = jwtService.getRol(token);
 
-            usuarioRepository.findActivoById(UUID.fromString(userId)).ifPresent(u -> {
-                var auth = new UsernamePasswordAuthenticationToken(
-                    u, null,
-                    List.of(new SimpleGrantedAuthority("ROLE_" + rol))
-                );
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            });
+                usuarioRepository.findActivoById(UUID.fromString(userId)).ifPresent(u -> {
+                    var auth = new UsernamePasswordAuthenticationToken(
+                        u, null,
+                        List.of(new SimpleGrantedAuthority("ROLE_" + rol))
+                    );
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                });
+            }
         } catch (Exception e) {
-            log.warn("Error procesando JWT: {}", e.getMessage());
+            log.warn("Error procesando JWT en la ruta {}: {}", path, e.getMessage());
+            // No bloqueamos aquí, dejamos que SecurityConfig decida si la ruta requiere auth
         }
 
         filterChain.doFilter(request, response);

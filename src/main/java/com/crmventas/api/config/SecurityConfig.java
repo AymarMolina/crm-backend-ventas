@@ -55,12 +55,21 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("crm-frontend-ventas.vercel.app"));
+        
+        // 1. Añade aquí tu URL de Vercel (SIN el '/' al final)
+        config.setAllowedOrigins(List.of(
+            "http://localhost:4200",
+            "crm-frontend-ventas.vercel.app" // <--- REEMPLAZA ESTO
+        ));
+        
         config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With")); // Headers específicos
-        config.setExposedHeaders(List.of("Authorization")); // Para que Angular pueda leer el token si lo envías en el header
+        
+        // 2. Usa "*" en AllowedHeaders para evitar problemas con headers personalizados
+        config.setAllowedHeaders(List.of("*")); 
+        
+        config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
-        config.setMaxAge(3600L); // Cache de 1 hora para que el navegador no pregunte OPTIONS en cada click
+        config.setMaxAge(3600L);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
