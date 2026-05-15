@@ -44,6 +44,7 @@ public class SecurityConfig {
                 .requestMatchers("/ventas/**").hasAnyRole("GERENTE","SUPERVISOR","BACK_OFFICE","AGENTE")
                 .requestMatchers("/ventas/*/estado").hasAnyRole("GERENTE","BACK_OFFICE")
                 .requestMatchers("/admin/**").hasRole("GERENTE")
+                .requestMatchers("/dashboard/gerente/**").hasAnyRole("GERENTE")
                 .requestMatchers("/api/objetivos/**").hasAnyRole("GERENTE", "SUPERVISOR")
                 .requestMatchers("/api/lineas/**").hasAnyRole("GERENTE")
                 .anyRequest().authenticated()

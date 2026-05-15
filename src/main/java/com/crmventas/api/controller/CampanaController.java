@@ -73,7 +73,7 @@ public class CampanaController {
         private String nombre;
 
         @NotNull(message = "La línea es obligatoria")
-        private Integer lineaId; // ✅ Cambiado de UUID a Integer
+        private Integer lineaId; 
 
         @NotNull(message = "El mes es obligatorio")
         @Min(value = 1,  message = "El mes debe estar entre 1 y 12")
