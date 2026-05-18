@@ -12,12 +12,6 @@ import com.crmventas.api.service.DashboardGerenteService;
 import java.util.List;
 import java.util.UUID;
  
-/**
- * Dashboard del Gerente — endpoints separados por responsabilidad:
- *
- *  GET /api/v1/dashboard/gerente/campanas          → selector de campañas (header)
- *  GET /api/v1/dashboard/gerente/{campanaId}        → dashboard completo de la campaña
- */
 @RestController
 @RequestMapping("/dashboard/gerente")
 @RequiredArgsConstructor
@@ -25,10 +19,6 @@ public class DashboardGerenteController {
  
     private final DashboardGerenteService dashboardService;
  
-    /**
-     * Lista todas las campañas activas para el selector del header.
-     * Se llama una sola vez al cargar la vista.
-     */
     @GetMapping("/campanas")
     public ResponseEntity<List<CampanaSelectorResponse>> getCampanas() {
         return ResponseEntity.ok(dashboardService.getCampanasActivas());

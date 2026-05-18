@@ -14,6 +14,9 @@ public class Cliente {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(name = "tipo_cliente", nullable = false, length = 10)
+    private String tipoCliente = "PERSONA"; // Default por DB
+
     @Column(name = "tipo_doc", nullable = false, length = 10)
     private String tipoDoc;
 
@@ -29,6 +32,9 @@ public class Cliente {
     @Column(name = "apellido_materno", length = 100)
     private String apellidoM;
 
+    @Column(name = "razon_social", length = 200)
+    private String razonSocial;
+
     @Column(length = 20)
     private String telefono;
 
@@ -41,7 +47,16 @@ public class Cliente {
     private String direccion;
 
     @Column(length = 80)
+    private String departamento;
+
+    @Column(length = 80)
+    private String provincia;
+
+    @Column(length = 80)
     private String distrito;
+
+    @Column(name = "ubigeo_id", length = 6)
+    private String ubigeoId;
 
     @Column(nullable = false)
     private Boolean activo = true;
@@ -51,12 +66,6 @@ public class Cliente {
 
     @Column(name = "actualizado_en", nullable = false)
     private OffsetDateTime actualizadoEn;
-
-    @Column(length = 80)
-    private String departamento;
-
-    @Column(length = 80)
-    private String provincia;
     
     @PrePersist
     protected void onCreate() {

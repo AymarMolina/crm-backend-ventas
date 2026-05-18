@@ -24,4 +24,7 @@ public interface CampanaRepository extends JpaRepository<Campana, UUID> {
         @Param("anio") Short anio,
         Pageable pageable
     );
+
+    @Query("SELECT c.nombre FROM Campana c WHERE c.id = :id")
+    String obtenerNombre(@Param("id") UUID id);
 }
