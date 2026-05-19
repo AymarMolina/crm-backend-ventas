@@ -32,8 +32,10 @@ public class ReporteRepository {
     public List<ReporteAsesorDTO> obtenerReportePorCampana(
             UUID campanaId,
             LocalDate fechaDesde,
-            LocalDate fechaHasta) {
- 
+            LocalDate fechaHasta,
+            UUID supervisorId,   // null → no filtrar
+            UUID agenteId) {     // null → no filtrar
+
         String sql = """
             SELECT
                 u.nombres || ' ' || u.apellidos            AS asesor_nombre,
@@ -45,24 +47,31 @@ public class ReporteRepository {
             FROM crm.ventas v
             JOIN crm.usuarios u       ON u.id = v.agente_id
             LEFT JOIN crm.productos p ON p.id = v.producto_id
-            LEFT JOIN crm.objetivos o ON o.campana_id = v.campana_id AND o.usuario_id = u.id
+            LEFT JOIN crm.objetivos o ON o.campana_id = v.campana_id
+                                    AND o.usuario_id = u.id
             WHERE v.campana_id  = :campanaId::uuid
-              AND v.eliminado   = FALSE
-              AND v.fecha_venta BETWEEN :fechaDesde AND :fechaHasta
-            GROUP BY u.id, u.nombres, u.apellidos, o.objetivo_ventas, o.monto_comision, p.nombre, v.monto
+            AND v.eliminado   = FALSE
+            AND v.fecha_venta BETWEEN :fechaDesde AND :fechaHasta
+            AND (:supervisorId::uuid IS NULL OR u.supervisor_id = :supervisorId::uuid)
+            AND (:agenteId::uuid     IS NULL OR u.id            = :agenteId::uuid)
+            GROUP BY u.id, u.nombres, u.apellidos,
+                    o.objetivo_ventas, o.monto_comision,
+                    p.nombre, v.monto
             ORDER BY u.apellidos, u.nombres, p.nombre
             """;
- 
+
         MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("campanaId",  campanaId)
-                .addValue("fechaDesde", fechaDesde)
-                .addValue("fechaHasta", fechaHasta);
- 
+                .addValue("campanaId",    campanaId)
+                .addValue("fechaDesde",   fechaDesde)
+                .addValue("fechaHasta",   fechaHasta)
+                .addValue("supervisorId", supervisorId != null ? supervisorId.toString() : null)
+                .addValue("agenteId",     agenteId     != null ? agenteId.toString()     : null);
+
         Map<String, ReporteAsesorDTO> porAsesor = new LinkedHashMap<>();
- 
+
         jdbc.query(sql, params, rs -> {
             String asesorNombre = rs.getString("asesor_nombre");
- 
+
             ReporteAsesorDTO dto = porAsesor.computeIfAbsent(asesorNombre, k -> {
                 ReporteAsesorDTO nuevoDto = new ReporteAsesorDTO();
                 nuevoDto.setAsesorNombre(asesorNombre);
@@ -77,13 +86,13 @@ public class ReporteRepository {
                 nuevoDto.setProductos(new ArrayList<>());
                 return nuevoDto;
             });
- 
+
             dto.getProductos().add(new ReporteAsesorDTO.FilaProducto(
                     rs.getString("producto_nombre"),
                     rs.getInt("cantidad"),
                     rs.getBigDecimal("precio_unitario")));
         });
- 
+
         return new ArrayList<>(porAsesor.values());
     }
  

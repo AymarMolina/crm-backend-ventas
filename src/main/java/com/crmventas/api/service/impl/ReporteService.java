@@ -36,13 +36,15 @@ public class ReporteService {
             ReporteFiltroDTO filtro,
             String campanaNombre,
             String generadoPor) throws IOException {
- 
+
         List<ReporteAsesorDTO> asesores = repo.obtenerReportePorCampana(
             filtro.getCampanaId(),
             filtro.getFechaDesde(),
-            filtro.getFechaHasta()
+            filtro.getFechaHasta(),
+            filtro.getSupervisorId(),  // nuevo
+            filtro.getAgenteId()       // nuevo
         );
- 
+
         return builder.build(
             asesores,
             campanaNombre,

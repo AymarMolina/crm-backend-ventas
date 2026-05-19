@@ -53,37 +53,43 @@ public class ReporteController {
      *       &fechaHasta=2026-05-18
      */
     @GetMapping("/asesores/excel")
-    public ResponseEntity<byte[]> descargarReporte(
-            @RequestParam("campanaId")  UUID campanaId,    // Spring convierte el string automáticamente
-            @RequestParam("fechaDesde") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
-            @RequestParam("fechaHasta") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta
-    ) throws IOException {
+        public ResponseEntity<byte[]> descargarReporte(
+                @RequestParam("campanaId")  UUID campanaId,
+                @RequestParam("fechaDesde") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+                @RequestParam("fechaHasta") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta
+        ) throws IOException {
 
-        String campanaNombre = campanaHelper.obtenerNombre(campanaId);// ← ya tipado
+        String campanaNombre = campanaHelper.obtenerNombre(campanaId);
+        Usuario usuario = getUsuarioAutenticado();
 
-        Usuario agente = getUsuarioAutenticado();
-        // Construir el DTO de filtro
         ReporteFiltroDTO filtro = new ReporteFiltroDTO();
         filtro.setCampanaId(campanaId);
         filtro.setFechaDesde(fechaDesde);
         filtro.setFechaHasta(fechaHasta);
- 
-        // Nombre del generador (usa el rol + nombre del JWT)
-        String generadoPor = agente.getNombres()+" "+agente.getApellidos();
- 
+
+        // ── Filtro según rol ────────────────────────────────────────
+        String rol = usuario.getRol().getCodigo(); // "GERENTE" / "SUPERVISOR" / "AGENTE"
+
+        switch (rol) {
+                case "SUPERVISOR" -> filtro.setSupervisorId(usuario.getId());
+                case "AGENTE"     -> filtro.setAgenteId(usuario.getId());
+                // GERENTE / BACK_OFFICE → null en ambos campos → ve todo
+        }
+
+        String generadoPor = usuario.getNombres() + " " + usuario.getApellidos();
+
         byte[] excel = service.generarReporte(filtro, campanaNombre, generadoPor);
- 
-        // Nombre del archivo con fecha
+
         String filename = "reporte_asesores_"
                 + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
                 + ".xlsx";
- 
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(MediaType.parseMediaType(
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .contentLength(excel.length)
                 .body(excel);
-    }
+        }
 }
  
