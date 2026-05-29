@@ -2,6 +2,7 @@ package com.crmventas.api.Reporte;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -10,13 +11,18 @@ import java.util.List;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.util.IOUtils;
+import org.apache.poi.util.Units;
 import org.apache.poi.xssf.usermodel.DefaultIndexedColorMap;
-import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFFont;
@@ -57,8 +63,45 @@ public class ReporteExcelBuilder {
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
  
             XSSFSheet ws = wb.createSheet("Reporte");
+
+            // ── Anchos de columna ─────────────────────────────────────────────
+            ws.setColumnWidth(0, 30 * 256);  // A: Producto
+            ws.setColumnWidth(1, 14 * 256);  // B: Cantidad / Objetivo
+            ws.setColumnWidth(2, 22 * 256);  // C: Precio x producto / Etiqueta Comisión
+            ws.setColumnWidth(3, 18 * 256);  // D: Venta final / Monto Comisión
  
-            // ── Estilos reutilizables (Último parámetro define si lleva bordes THIN) ─────────────────
+            // ── 0. INSERTAR LOGO (MÁS ALTO) ───────────────────────────────────
+            try (InputStream is = getClass().getResourceAsStream("/logo.png")) {
+                if (is != null) {
+                    byte[] bytes = IOUtils.toByteArray(is);
+                    int pictureIdx = wb.addPicture(bytes, Workbook.PICTURE_TYPE_PNG);
+
+                    CreationHelper helper = wb.getCreationHelper();
+                    Drawing<?> drawing = ws.createDrawingPatriarch();
+                    ClientAnchor anchor = helper.createClientAnchor();
+
+                    // ¡AQUÍ ES MÁS ALTO! Ocupa desde Columna 0 a 1 y Fila 0 a 5 (Seis filas en total)
+                    anchor.setCol1(0);
+                    anchor.setRow1(0);
+                    anchor.setCol2(2); 
+                    anchor.setRow2(6); // Antes era 4
+
+                    // Márgenes
+                    anchor.setDx1(Units.toEMU(15));
+                    anchor.setDy1(Units.toEMU(15));
+                    anchor.setDx2(-Units.toEMU(15));
+                    anchor.setDy2(-Units.toEMU(15));
+
+                    anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
+                    drawing.createPicture(anchor, pictureIdx);
+                } else {
+                    System.out.println("Advertencia: No se encontró logo.png");
+                }
+            } catch (Exception e) {
+                System.err.println("Error al cargar el logo: " + e.getMessage());
+            }
+
+            // ── Estilos reutilizables ─────────────────────────────────────────
             CellStyle stTitulo      = crearEstilo(wb, COLOR_TITULO,     COLOR_BLANCO, true,  14, HorizontalAlignment.CENTER, false);
             CellStyle stAsesor      = crearEstilo(wb, COLOR_ASESOR,     COLOR_BLANCO, true,  11, HorizontalAlignment.CENTER, true);
             CellStyle stHeaderCol  = crearEstilo(wb, COLOR_HEADER_COL, COLOR_NEGRO,  true,  10, HorizontalAlignment.CENTER, true);
@@ -67,7 +110,7 @@ public class ReporteExcelBuilder {
             CellStyle stMeta       = crearEstilo(wb, COLOR_BLANCO,     COLOR_NEGRO,  false, 10, HorizontalAlignment.LEFT,   false);
             CellStyle stMetaLabel  = crearEstilo(wb, COLOR_BLANCO,     COLOR_NEGRO,  true,  10, HorizontalAlignment.LEFT,   false);
             
-            // Estilos específicos con borde para la fila de objetivos de los asesores
+            // Estilos específicos con borde para la fila de objetivos
             CellStyle stObjLabel   = crearEstilo(wb, COLOR_BLANCO,     COLOR_NEGRO,  true,  10, HorizontalAlignment.LEFT,   true);
             CellStyle stObjValue   = crearEstilo(wb, COLOR_BLANCO,     COLOR_NEGRO,  false, 10, HorizontalAlignment.CENTER, true);
  
@@ -78,23 +121,17 @@ public class ReporteExcelBuilder {
             CellStyle stMonedaPar  = crearEstilo(wb, COLOR_FILA_PAR,   COLOR_NEGRO,  false, 10, HorizontalAlignment.CENTER, true);
             stMonedaPar.setDataFormat(wb.createDataFormat().getFormat("#,##0.00"));
  
-            // ── Anchos de columna ─────────────────────────────────────────────
-            ws.setColumnWidth(0, 30 * 256);  // A: Producto
-            ws.setColumnWidth(1, 14 * 256);  // B: Cantidad / Objetivo
-            ws.setColumnWidth(2, 22 * 256);  // C: Precio x producto / Etiqueta Comisión
-            ws.setColumnWidth(3, 18 * 256);  // D: Venta final / Monto Comisión
- 
-            // ── FILA 1-2: Título ──────────────────────────────────────────────
-            XSSFRow r1 = ws.createRow(0);
+            // ── FILA 7-8 (Índice 6-7): Título (Desplazado más abajo) ──────────
+            XSSFRow r1 = ws.createRow(6);
             r1.setHeightInPoints(22);
-            XSSFCell cTitulo = r1.createCell(0);
+            Cell cTitulo = r1.createCell(0);
             cTitulo.setCellValue("REPORTE DE VENTAS – CRM");
             cTitulo.setCellStyle(stTitulo);
-            ws.addMergedRegion(new CellRangeAddress(0, 1, 0, 3)); // A1:D2
-            ws.createRow(1).setHeightInPoints(8);
+            ws.addMergedRegion(new CellRangeAddress(6, 7, 0, 3)); // A7:D8
+            ws.createRow(7).setHeightInPoints(8);
  
-            // ── FILA 3: Metadatos ─────────────────────────────────────────────
-            Row rMeta = ws.createRow(2);
+            // ── FILA 9 (Índice 8): Metadatos ──────────────────────────────────
+            Row rMeta = ws.createRow(8);
             rMeta.setHeightInPoints(16);
  
             setCell(rMeta, 0, "Fecha generación:", stMetaLabel);
@@ -104,27 +141,27 @@ public class ReporteExcelBuilder {
             String periodo = fechaDesde.format(FMT_FECHA) + " – " + fechaHasta.format(FMT_FECHA);
             setCell(rMeta, 3, periodo, stMeta);
  
-            // Fila 4 en blanco
-            ws.createRow(3).setHeightInPoints(6);
+            // Fila 10 (Índice 9) en blanco
+            ws.createRow(9).setHeightInPoints(6);
  
-            // Segunda línea de meta (fila 5)
-            Row rMeta2 = ws.createRow(4);
+            // ── FILA 11 (Índice 10): Segunda línea de meta ────────────────────
+            Row rMeta2 = ws.createRow(10);
             rMeta2.setHeightInPoints(16);
             setCell(rMeta2, 0, "Campaña:", stMetaLabel);
             setCell(rMeta2, 1, campana, stMeta);
             setCell(rMeta2, 2, "Generado por:", stMetaLabel);
             setCell(rMeta2, 3, generadoPor, stMeta);
  
-            // Fila 6 en blanco (separador)
-            ws.createRow(5).setHeightInPoints(6);
+            // Fila 12 (Índice 11) en blanco (separador)
+            ws.createRow(11).setHeightInPoints(6);
  
             // ── BLOQUES POR ASESOR ────────────────────────────────────────────
-            int rowIdx = 6;  // empezamos desde la fila 7 (índice 6)
+            int rowIdx = 12;  // Empezamos los datos desde la fila 13 (índice 12)
  
             for (int a = 0; a < asesores.size(); a++) {
                 ReporteAsesorDTO asesor = asesores.get(a);
  
-                // 1. Cabecera del asesor (Se crean todas las celdas del merge para mantener consistencia de color/borde)
+                // 1. Cabecera del asesor 
                 Row rAsesor = ws.createRow(rowIdx++);
                 rAsesor.setHeightInPoints(18);
                 for (int i = 0; i <= 3; i++) {
@@ -133,7 +170,7 @@ public class ReporteExcelBuilder {
                 rAsesor.getCell(0).setCellValue("REPORTE " + asesor.getAsesorNombre().toUpperCase());
                 ws.addMergedRegion(new CellRangeAddress(rAsesor.getRowNum(), rAsesor.getRowNum(), 0, 3));
  
-                // 2. NUEVO: Fila de Objetivos y Comisión del Asesor
+                // 2. Fila de Objetivos y Comisión del Asesor
                 Row rObjetivo = ws.createRow(rowIdx++);
                 rObjetivo.setHeightInPoints(16);
                 
